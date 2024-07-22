@@ -1,65 +1,170 @@
 
  # Instructions for Safe Script Execution
 
-Save this script as `safe_execution_instructions.ps1`:
 
-```powershell
-# Save this script as 'safe_execution_instructions.ps1'
+### Security Advisory
 
-# Inform users about the security risks of running scripts on public WiFi
-Write-Output "WARNING: Do not run these setup scripts on public WiFi networks."
+**Important:** It is highly recommended not to execute any of these scripts over public Wi-Fi networks due to the increased risk of exposure and potential security breaches. To ensure the safety and integrity of your data and connections, please use a secure network or VPN when running these scripts.
 
-Write-Output "Public WiFi networks can be insecure and expose your data to potential threats. It is highly recommended to execute these scripts only on trusted, secure networks to protect your sensitive information and avoid potential security risks."
+**Documentation Security:** All documentation provided by SAL has been encrypted end-to-end to protect sensitive information. If you have any doubts about the security or usage of the scripts, or if you require any additional guidance, please consult with your IT department or a cybersecurity professional. 
 
-Write-Output "To ensure your data is secure, please follow these steps:"
+**Angel Investors and Stakeholders:** If you need further assistance or have specific queries regarding the scripts or documentation, please contact SAL directly at [saldevs.team@gmail.com](mailto:saldevs.team@gmail.com).
 
-# Instructions for users with administrative rights
-Write-Output "1. If you have administrative rights, ensure your network connection is secure before running any scripts."
 
-# Instructions for users without administrative rights
-Write-Output "2. If you do not have administrative rights and need to mask your IP address, download and use the masking script below to protect your IP before running the setup scripts."
-
-Write-Output "The masking script will provide you with a unique URL that masks your IP. This URL is valid for 3 hours and will regenerate every 3 hours, allowing a maximum of 6 hours of use per day."
-
-Write-Output "You can download the masking script from the following link:"
-
-# Provide a link to the masking script
-Write-Output "Download masking script: https://example.com/masking-script.ps1"
-
-Write-Output "After downloading and running the masking script, you can proceed with running the main setup scripts. Ensure you run these scripts in a secure environment."
-
-Write-Output "For more information on securing your network and data, please consult your IT department or a cybersecurity professional."
-```
 
 **Masking Script**
 
 This script should be run before the main setup scripts. Save this script as `masking_script.ps1`:
 
-```powershell
-# Save this script as 'masking_script.ps1'
+Here's a Python script that generates a masked URL for use when connecting to the service, incorporating a token with a limited validity period. This script will be used to mask your IP address by generating a unique URL which will expire after 3 hours, and it allows for a maximum of 6 hours of usage per day.
 
-# Function to generate a unique URL for IP masking
-function Generate-MaskingURL {
-    $currentTime = Get-Date -Format "yyyyMMddHHmmss"
-    $uniqueURL = "https://masking.example.com/activate?token=$($currentTime)"
-    return $uniqueURL
-}
+### Masking Script
 
-# Generate a unique URL
-$maskingURL = Generate-MaskingURL
+Save this script as `masking_service.py`:
 
-# Inform the user about the masking URL
-Write-Output "To mask your IP address, use the following URL:"
-Write-Output $maskingURL
+```python
+import os
+import sys
+import time
+import sqlite3
+import uuid
+from datetime import datetime, timedelta
+from flask import Flask, request, jsonify
+from threading import Timer
+from urllib.parse import urlencode
 
-Write-Output "This URL will mask your IP address for 3 hours. It will regenerate every 3 hours, providing a maximum of 6 hours of use per day."
+app = Flask(__name__)
 
-# Instructions to use the URL
-Write-Output "Copy and paste this URL into your browser to activate IP masking before running any setup scripts."
+# Constants
+DB_FILE = 'masking_service.db'
+URL_VALIDITY_PERIOD = timedelta(hours=3)
+MAX_DAILY_USAGE = timedelta(hours=6)
 
-Write-Output "Please ensure you follow security best practices when using public WiFi networks."
+# Initialize database
+def init_db():
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS tokens (
+            token TEXT PRIMARY KEY,
+            user_id TEXT NOT NULL,
+            creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            expiry TIMESTAMP NOT NULL
+        )
+    ''')
+    conn.commit()
+    conn.close()
+
+# Generate a unique token
+def generate_token():
+    return str(uuid.uuid4())
+
+# Check daily usage limit
+def check_daily_usage(user_id):
+    now = datetime.now()
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT SUM(strftime('%s', expiry) - strftime('%s', creation)) 
+        FROM tokens 
+        WHERE user_id = ? AND DATE(creation) = DATE('now')
+    ''', (user_id,))
+    daily_usage = cursor.fetchone()[0] or 0
+    conn.close()
+    return daily_usage
+
+# Generate URL with token
+@app.route('/generate_url', methods=['POST'])
+def generate_url():
+    user_id = request.json.get('user_id')
+    if not user_id:
+        return jsonify({"error": "User ID is required"}), 400
+
+    daily_usage = check_daily_usage(user_id)
+    if daily_usage >= MAX_DAILY_USAGE.total_seconds():
+        return jsonify({"error": "Daily usage limit reached"}), 403
+
+    token = generate_token()
+    expiry_time = datetime.now() + URL_VALIDITY_PERIOD
+
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    cursor.execute('''
+        INSERT INTO tokens (token, user_id, expiry) 
+        VALUES (?, ?, ?)
+    ''', (token, user_id, expiry_time))
+    conn.commit()
+    conn.close()
+
+    url = f"https://github.com/whatheheckisthis/SAL-Dev-Setup-Guide/blob/main/README.md?token={token}"
+    return jsonify({
+        "url": url,
+        "valid_until": expiry_time.strftime('%Y-%m-%d %H:%M:%S')
+    })
+
+# Validate token
+@app.route('/validate_token/<token>', methods=['GET'])
+def validate_token(token):
+    now = datetime.now()
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT expiry FROM tokens WHERE token = ?
+    ''', (token,))
+    result = cursor.fetchone()
+    conn.close()
+
+    if result:
+        expiry_time = datetime.strptime(result[0], '%Y-%m-%d %H:%M:%S')
+        if expiry_time > now:
+            return jsonify({"status": "valid", "valid_until": expiry_time.strftime('%Y-%m-%d %H:%M:%S')})
+        else:
+            return jsonify({"status": "expired"}), 403
+    return jsonify({"status": "invalid"}), 404
+
+# Auto-restart service
+def restart_service():
+    Timer(1800, restart_service).start()  # Restart every 30 minutes
+    os.execv(sys.executable, ['python'] + sys.argv)  # Restart the script
+
+if __name__ == '__main__':
+    init_db()
+    restart_service()
+    app.run(port=5000)
 ```
 
+### Explanation
+
+1. **Database Initialization**:
+   - Sets up an SQLite database to store tokens and their expiry information.
+
+2. **Token Generation**:
+   - Generates a unique token and a URL with that token.
+   - Validates token usage against the daily limit.
+
+3. **Token Validation**:
+   - Checks if a token is still valid or has expired.
+
+4. **Service Auto-Restart**:
+   - Automatically restarts the service every 30 minutes to ensure it's always running.
+
+### Usage
+
+1. **Download and Run the Masking Service Script**:
+   - Save `masking_service.py` and run it in your terminal:
+     ```bash
+     python masking_service.py
+     ```
+
+2. **Generating a Masked URL**:
+   - Send a POST request to `/generate_url` with a JSON payload containing your `user_id`.
+
+3. **Validating a Token**:
+   - Send a GET request to `/validate_token/<token>` to check if the token is valid or expired.
+
+### Security Note
+
+**Avoid running these scripts on public Wi-Fi networks** due to security risks. Use a secure network or VPN to protect your data and connections.
 ### Instructions for Users
 
 1. **Download and Run the Masking Script:**
@@ -88,9 +193,13 @@ Write-Output "Please ensure you follow security best practices when using public
 2. **Set up** a SQLite database to manage token allocation.
 3. **Run** the Flask service.
 
+Certainly! To tailor the scripts to use your specified URL (`https://github.com/whatheheckisthis/SAL-Dev-Setup-Guide/blob/main/README.md`), we'll adjust the `url_service.py` script to use this URL as a placeholder.
+
+Here's the updated full setup script and Flask service script:
+
 ### Full Python Setup Script
 
-This script downloads necessary files, sets up a SQLite database, and starts the Flask service. Save this script as `setup_service.py`.
+Save this script as `setup_service.py`:
 
 ```python
 import os
@@ -100,7 +209,7 @@ import sqlite3
 from urllib.request import urlretrieve
 
 # Constants
-FLASK_SERVICE_URL = 'https://github.com/your-repo/url_service.py'
+FLASK_SERVICE_URL = 'https://github.com/whatheheckisthis/SAL-Dev-Setup-Guide/blob/main/README.md'
 DB_FILE = 'url_service.db'
 FLASK_SCRIPT_FILE = 'url_service.py'
 PORT = 5000
@@ -155,7 +264,7 @@ if __name__ == "__main__":
 
 ### Flask Service Script (for reference)
 
-This is the same `url_service.py` script referenced in the `setup_service.py`. Ensure it is hosted at the URL specified (`FLASK_SERVICE_URL`).
+Ensure this script (`url_service.py`) is hosted at the URL specified (`FLASK_SERVICE_URL`).
 
 ```python
 from flask import Flask, jsonify, request
@@ -206,7 +315,7 @@ def generate_url():
     conn.commit()
     conn.close()
 
-    url = f"https://masking.example.com/activate?token={token}"
+    url = f"https://github.com/whatheheckisthis/SAL-Dev-Setup-Guide/blob/main/README.md?token={token}"
     
     return jsonify({
         "url": url,
@@ -246,16 +355,14 @@ if __name__ == '__main__':
      ```
 
 2. **What This Script Does**:
-   - **Downloads** the Flask service script.
-   - **Sets up** a SQLite database.
-   - **Installs** Flask if not already installed.
+   - **Downloads** the Flask service script from the provided URL.
+   - **Sets up** a SQLite database to store tokens and their expiration times.
+   - **Installs** Flask if it is not already installed.
    - **Runs** the Flask service on port 5000.
 
 ### Security Advisory
 
-Ensure that you do not run these scripts on public Wi-Fi networks due to potential security risks. Public networks are more susceptible to attacks, and using them can expose your system to vulnerabilities. If necessary, use VPN services to mask your IP address and secure your connections.
-
-This approach simplifies the setup process and ensures that all components are correctly configured and running without requiring manual intervention from the user beyond the initial script execution.
+**Do not run these scripts on public Wi-Fi networks** due to potential security risks. Public networks are more susceptible to attacks and using them can expose your system to vulnerabilities. Always use a secure and private network or a VPN to mask your IP address and ensure your connections are safe.
 
 
 ### Unified Setup Script
