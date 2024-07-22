@@ -638,7 +638,7 @@ Write-Output "Setup complete. Permissions have been set to read-only for non-dev
    ```powershell
    .\SAL_Restricted_Setup.ps1
    ```
-To create a system where users need to generate a unique 12-figure authentication key to access the contents of the `SAL_Documentation` folder, you can follow these steps:
+To generate a unique 12-figure authentication key to access the contents of the `SAL_Documentation` folder, you can follow these steps:
 
 1. **Create a Key Generation Service**: A Python script that runs a local Flask web service to generate and validate keys.
 2. **Generate the Key**: Users can generate their unique key through the service.
@@ -799,7 +799,7 @@ if (Validate-Key) {
 }
 ```
 
-Save this script as `access_control.ps1`. Users will need to run this script to access the `SAL_Documentation` folder. The script checks if the user has a valid key and prompts them to generate one if necessary.
+Save this script as `access_control.ps1`. To access the `SAL_Documentation` folder. The following script checks if for a valid key and prompts  to generate one if necessary.
 
 1. **Run Key Generation Service**: Start the Python script to run the key generation service.
 2. **Generate Key**:  open `index.html` in your browser to generate a key.
