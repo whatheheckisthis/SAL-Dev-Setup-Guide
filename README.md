@@ -6,113 +6,7 @@
 
 **Angel Investors and Stakeholders:** If you need further assistance or have specific queries regarding the scripts or documentation, please contact SAL directly at [saldevs.team@gmail.com](mailto:saldevs.team@gmail.com).
 
-### PowerShell Script
 
-Save this script as `SAL_Setup.ps1`.
-
-```powershell
-# Define variables
-$desktopPath = [System.IO.Path]::Combine([System.Environment]::GetFolderPath("Desktop"))
-$salFolderPath = [System.IO.Path]::Combine($desktopPath, "SAL_Documentation")
-$rustProjectPath = [System.IO.Path]::Combine($desktopPath, "my_rust_project")
-
-# Create SAL_Documentation folder on Desktop
-if (-not (Test-Path $salFolderPath)) {
-    New-Item -ItemType Directory -Path $salFolderPath
-}
-
-# Move Rust project to SAL_Documentation folder
-if (Test-Path $rustProjectPath) {
-    Move-Item -Path $rustProjectPath -Destination $salFolderPath
-}
-
-# Disclaimer pop-up dialogue box
-Add-Type -AssemblyName PresentationFramework
-$disclaimerMessage = @"
-By engaging further, you agree to SAL Industries IP Policy which states:
-SAL Industries owns the API for the source code and any and all documentation that you are granted access to.
-If you attempt to package, redistribute, or modify the script, the application will cease to function and eventually crash.
-If you attempt to relaunch your terminal, the contents will erase itself from your system and deny access.
-"@
-$disclaimer = New-Object Windows.MessageBox
-$result = [System.Windows.MessageBox]::Show($disclaimerMessage, "SAL Industries IP Policy", [System.Windows.MessageBoxButton]::YesNo)
-
-# Process user response
-if ($result -eq [System.Windows.MessageBoxResult]::Yes) {
-    # User agreed to the disclaimer
-    Write-Host "User agreed to the IP Policy. Setting up the environment..."
-
-    # Your setup commands here
-    # E.g., Activate virtual environment, install dependencies, etc.
-
-} else {
-    # User disagreed to the disclaimer
-    Write-Host "User disagreed to the IP Policy. Exiting..."
-    exit
-}
-
-# Function to monitor unauthorized actions
-function Monitor-Security {
-    # Add your monitoring and security alert logic here
-    # For example, send alert to GitHub, etc.
-    Write-Host "Monitoring for unauthorized actions..."
-}
-
-# Start monitoring
-Monitor-Security
-
-# Function to send security alert
-function Send-SecurityAlert {
-    # Logic to send a security alert
-    # For example, send alert to GitHub via a remote connection
-    Write-Host "Security alert sent to the development team via GitHub."
-}
-
-# Function to handle unauthorized actions
-function Handle-UnauthorizedActions {
-    Write-Host "Unauthorized action detected. Erasing contents and denying access..."
-    # Logic to erase contents and deny access
-    # For example, remove SAL_Documentation folder, etc.
-    Remove-Item -Path $salFolderPath -Recurse -Force
-    Write-Host "Contents erased and access denied."
-    Send-SecurityAlert
-}
-
-# Add error handling
-trap {
-    Write-Host "An error occurred: $_"
-    Handle-UnauthorizedActions
-    exit
-}
-
-# Final setup steps (add your setup steps here)
-Write-Host "Finalizing setup..."
-# E.g., Setup environment, move files, etc.
-
-Write-Host "Setup complete. Enjoy using SAL Industries documentation and tools."
-
-# Function to send security alert if an override is required
-function Send-OverrideAlert {
-    # Logic to send an override alert
-    # For example, request 6-figure authentication pin
-    Write-Host "Override alert sent to the development team for authorization."
-}
-
-# Function to handle override
-function Handle-Override {
-    $pin = Read-Host "Enter the 6-figure authentication pin"
-    if ($pin -eq "your-6-figure-authentication-pin") {
-        Write-Host "Override authorized. Continuing..."
-    } else {
-        Write-Host "Invalid pin. Exiting..."
-        Handle-UnauthorizedActions
-    }
-}
-
-# Prompt for override pin if needed
-Write-Host "If you need to perform an override, please contact the development team."
-Handle-Override
-```
 
 ### Instructions for Users
 
@@ -152,10 +46,9 @@ if (Test-Path $rustProjectPath) {
 # Disclaimer pop-up dialogue box
 Add-Type -AssemblyName PresentationFramework
 $disclaimerMessage = @"
-By engaging further, you agree to SAL Industries IP Policy which states:
-SAL Industries owns the API for the source code and any and all documentation that you are granted access to.
-If you attempt to package, redistribute, or modify the script, the application will cease to function and eventually crash.
-If you attempt to relaunch your terminal, the contents will erase itself from your system and deny access.
+By engaging further, you agree to SAL Technologies IP Policy which states:
+SAL owns their API for the source code and any documentation that you are granted access to.
+If you attempt to package, redistribute, or modify the script, the application will cease to function 
 "@
 $disclaimer = New-Object Windows.MessageBox
 $result = [System.Windows.MessageBox]::Show($disclaimerMessage, "SAL Industries IP Policy", [System.Windows.MessageBoxButton]::YesNo)
@@ -329,15 +222,7 @@ function Send-OverrideAlert {
     Write-Host "Override alert sent to the development team for authorization."
 }
 
-# Function to handle override
-function Handle-Override {
-    $pin = Read-Host "Enter the 6-figure authentication pin"
-    if ($pin -eq "your-6-figure-authentication-pin") {
-        Write-Host "Override authorized. Continuing..."
-    } else {
-        Write-Host "Invalid pin. Exiting..."
-        Handle-UnauthorizedActions
-    }
+    
 }
 
 # Prompt for override pin if needed
@@ -359,8 +244,6 @@ Handle-Override
     ```powershell
     .\SAL_Setup.ps1
     ```
-
-
 
 ### Python Script
 
@@ -471,7 +354,7 @@ if __name__ == '__main__':
 
 ### Summary
 
-1. **Download**: Save the provided PowerShell scripts (`SAL_Setup.ps1` and `masking_script.ps1`) and the Python script (`masking_service.py`).
+1. **Download**: Save the provided scripts (`SAL_Setup.ps1` and `masking_script.ps1`) and the Python script (`masking_service.py`).
 2. **Run Masking Script**: Execute `masking_script.ps1` to set up folders and move the Rust project.
 3. **Run Setup Script**: Execute `SAL_Setup.ps1` to set up the environment, monitor security, and handle overrides.
 4. **Security and IP Policy**: Ensure compliance with SAL's IP policy and handle unauthorized actions appropriately.
